@@ -1,29 +1,31 @@
 # Green Locale
 
+> This package provides Localization for [Green Framework](https://github.com/YasserElgammal/green).
+
 Localized JSON attributes for Green Framework models.
 
 `green-locale` lets a model store translated attributes such as `name`, `description`, or `slug` in a single JSON column, then read the right value for the current locale with explicit model methods.
 
 ## Contents
 
-- Requirements
-- Installation
-- Configuration
-- Bootstrapping
-- Model setup
-- Database columns
-- Reading locale values
-- Writing locale values
-- Persisting model changes
-- Locale resolution
-- Querying localized values
-- Validation rules
-- Events
-- Helpers
-- Testing
-- Full example
-- Troubleshooting
-- Contributing
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Bootstrapping](#bootstrapping)
+- [Database columns](#database-columns)
+- [Model setup](#model-setup)
+- [Reading locale values](#reading-locale-values)
+- [Writing locale values](#writing-locale-values)
+- [Persisting model changes](#persisting-model-changes)
+- [Locale resolution](#locale-resolution)
+- [Querying localized values](#querying-localized-values)
+- [Validation rules](#validation-rules)
+- [Events](#events)
+- [Helpers](#helpers)
+- [Testing](#testing)
+- [Full example](#full-example)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
 
 ## Requirements
 
@@ -120,6 +122,19 @@ use YasserElgammal\GreenLocale\LocaleServiceProvider;
 LocaleServiceProvider::boot();
 ```
 
+## Database Columns
+
+Localized attributes are stored as JSON strings in normal database columns.
+
+Example stored value for `name`:
+
+```json
+{
+    "en": "Phone",
+    "ar": "هاتف"
+}
+```
+
 ## Model Setup
 
 Use `HasLocales` on any model that has localized JSON attributes.
@@ -148,19 +163,6 @@ class Product extends Model
 ```
 
 Only attributes listed in `$localeAttributes` can be used with locale methods. Calling locale methods on undeclared attributes throws `LocaleAttributeNotDeclared`.
-
-## Database Columns
-
-Localized attributes are stored as JSON strings in normal database columns.
-
-Example stored value for `name`:
-
-```json
-{
-    "en": "Phone",
-    "ar": "هاتف"
-}
-```
 
 ## Reading Locale Values
 
@@ -531,13 +533,37 @@ composer validate --no-check-publish
 
 ### 1. Create Table
 
-```sql
-CREATE TABLE products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    description TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+Generate a new migration:
+
+```bash
+php green make:migration CreateProductsTable
+```
+
+```php
+namespace Database\Migrations;
+
+use YasserElgammal\Green\Database\Migrations\Migration;
+use YasserElgammal\Green\Database\Schema\Blueprint;
+use YasserElgammal\Green\Database\Schema\Schema;
+
+class CreateProductsTable extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('products', function (Blueprint $table) {
+            $table->id();
+            $table->text('name');
+            $table->text('description')->nullable();
+            $table->text('slug')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('products');
+    }
+}
 ```
 
 ### 2. Create Model
