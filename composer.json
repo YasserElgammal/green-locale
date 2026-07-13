@@ -18,6 +18,7 @@
     },
     "require": {
         "php": "^8.2",
+        "yasser-elgammal/green-core": "^2.0",
         "doctrine/dbal": "^4.0",
         "respect/validation": "^2.3"
     },

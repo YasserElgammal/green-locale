@@ -30,7 +30,7 @@ Localized JSON attributes for Green Framework models.
 ## Requirements
 
 - PHP `^8.2`
-- Green Framework skeleton
+- Green Framework skeleton with `yasser-elgammal/green-core`
 - Doctrine DBAL, already used by Green
 - Respect Validation, used for the package validation rules
 
@@ -58,7 +58,9 @@ return [
         'ar',
     ],
 
-    'resolver' => ['query', 'session', 'request', 'config'],
+    'resolver' => 'request',
+    'query_parameter' => 'locale',
+    'session_key' => 'locale',
 
     'strict' => false,
 ];
@@ -80,7 +82,13 @@ The list of locales your application supports.
 
 `resolver`
 
-The locale resolver driver or resolver chain. Resolvers are executed in the exact order they are defined in the array (from left to right). The first resolver that returns an available locale wins.
+The locale resolver driver or resolver chain. Use a string for one resolver, or an array for a priority chain:
+
+```php
+'resolver' => ['query', 'session', 'request', 'config'],
+```
+
+Resolvers are executed in the exact order they are defined in the array (from left to right). The first resolver that returns an available locale wins.
 
 Supported drivers (and their typical priority):
 
@@ -88,6 +96,14 @@ Supported drivers (and their typical priority):
 2. `session`: Reads `session()->get('locale')` or `$_SESSION['locale']` if the user changed their preference previously.
 3. `request`: Reads the `Accept-Language` HTTP header to detect the browser's preferred language.
 4. `config`: Lowest priority. Returns the `default_locale` if no other method succeeds.
+
+`query_parameter`
+
+The query-string key used by the `query` resolver. Defaults to `locale`, so `?locale=ar` resolves Arabic.
+
+`session_key`
+
+The session key used by the `session` resolver. Defaults to `locale`.
 
 `strict`
 
@@ -97,29 +113,34 @@ When `true`, missing locale values throw `MissingLocaleValueException`.
 
 ## Bootstrapping
 
-Boot the package once during application startup.
-
-In `public/index.php`, after loading Composer and defining `BASE_PATH`, add:
+Green Locale is a Green service provider. Register it in your application `config/app.php`:
 
 ```php
-use YasserElgammal\GreenLocale\LocaleServiceProvider;
+<?php
 
-LocaleServiceProvider::boot();
+return [
+    'providers' => [
+        \YasserElgammal\GreenLocale\LocaleServiceProvider::class,
+    ],
+];
 ```
 
-Example:
+Green will call the provider during application startup and bind the locale manager into the application container.
+
+For scripts, tests, or older bootstrap files that do not use Green's provider loader, you can create the manager manually:
 
 ```php
-require_once __DIR__ . '/../vendor/autoload.php';
-
-define('BASE_PATH', realpath(__DIR__ . '/../'));
-
-$dotenv = Dotenv\Dotenv::createImmutable(BASE_PATH);
-$dotenv->safeLoad();
-
 use YasserElgammal\GreenLocale\LocaleServiceProvider;
 
-LocaleServiceProvider::boot();
+LocaleServiceProvider::make();
+```
+
+You may also pass an explicit config path:
+
+```php
+use YasserElgammal\GreenLocale\LocaleServiceProvider;
+
+LocaleServiceProvider::make(BASE_PATH . '/config/locale.php');
 ```
 
 ## Database Columns
@@ -656,7 +677,7 @@ $products = $table->fetchAllFromBuilder($qb);
 
 Check that:
 
-- `LocaleServiceProvider::boot()` is called
+- `LocaleServiceProvider` is registered in `config/app.php`, or `LocaleServiceProvider::make()` is called in manual bootstraps
 - The requested locale exists in `available_locales`
 - The resolver chain includes the source you are using, such as `query` or `session`
 
@@ -694,4 +715,3 @@ Make sure your database supports these functions. MySQL supports them. SQLite su
 ## Contributing
 
 Contributions are welcome!
-
